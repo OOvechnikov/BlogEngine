@@ -12,7 +12,7 @@ public class Main {
 
     public static void main(String[] args) {
 
-        initializeDb();
+//        initializeDb();
         SpringApplication.run(Main.class, args);
 
     }
