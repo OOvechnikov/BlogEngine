@@ -1,4 +1,4 @@
-package main.api.responce;
+package main.api.response;
 
 public class AuthResponse {
 

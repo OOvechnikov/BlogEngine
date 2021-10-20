@@ -1,4 +1,4 @@
-package main.api.responce;
+package main.api.response;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

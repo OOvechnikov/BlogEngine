@@ -1,0 +1,32 @@
+server:
+  port: 8080
+
+spring:
+  messages:
+    basename: lang.messages
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/blog_engine?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Europe/Moscow
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: rootroot
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+
+  liquibase:
+    enabled: true
+    change-log: classpath:/db/changelog/db.changelog-master.xml
+
+engine:
+  title: DevPub
+  subtitle: Разговорчики разработчиков
+  phone: +7 903 687-35-84
+  email: warlordkolomna@bk.ru
+  copyright: Олег Овечников
+  copyrightFrom: 2021
+
+
+

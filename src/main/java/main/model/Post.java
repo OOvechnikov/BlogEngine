@@ -16,8 +16,9 @@ public class Post {
     @Column(name = "is_active", nullable = false)
     private int isActive;
 
-    @Column(name = "moderation_status", nullable = false)
-    private Enum<ModerationStatus> moderationStatus;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "moderation_status", columnDefinition = "ENUM('NEW', 'ACCEPTED', 'DECLINED')", nullable = false)
+    private ModerationStatus moderationStatus;
 
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "moderator_id")
@@ -65,11 +66,11 @@ public class Post {
         this.isActive = isActive;
     }
 
-    public Enum<ModerationStatus> getModerationStatus() {
+    public ModerationStatus getModerationStatus() {
         return moderationStatus;
     }
 
-    public void setModerationStatus(Enum<ModerationStatus> moderationStatus) {
+    public void setModerationStatus(ModerationStatus moderationStatus) {
         this.moderationStatus = moderationStatus;
     }
 

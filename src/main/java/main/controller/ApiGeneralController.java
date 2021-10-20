@@ -1,13 +1,14 @@
 package main.controller;
 
-import main.api.responce.InitResponse;
-import main.api.responce.SettingsResponse;
-import main.api.responce.TagResponse;
+import main.api.response.InitResponse;
+import main.api.response.SettingsResponse;
+import main.api.response.tag.TagResponse;
 import main.service.SettingsService;
 import main.service.TagService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -25,6 +26,8 @@ public class ApiGeneralController {
         this.tagService = tagService;
     }
 
+
+
     @GetMapping("/init")
     private InitResponse init() {
         return initResponse;
@@ -36,8 +39,8 @@ public class ApiGeneralController {
     }
 
     @GetMapping("/tag")
-    private TagResponse tags() {
-        return tagService.getTag();
+    private TagResponse tags(@RequestParam(name = "query", required = false) String query) {
+        return tagService.getTagResponseJDBC(query);
     }
 
 }
