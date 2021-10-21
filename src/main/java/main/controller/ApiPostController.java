@@ -1,5 +1,7 @@
 package main.controller;
 
+//import main.api.response.CalendarResponse;
+import main.api.response.CalendarResponse;
 import main.api.response.post.PostResponse;
 import main.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +35,11 @@ public class ApiPostController {
                                          @RequestParam(name = "limit", required = false) Integer limit,
                                          @RequestParam(name = "query", required = false) String query) {
         return postService.getPostsBySearch(offset, limit, query);
+    }
+
+    @GetMapping("/calendar")
+    public CalendarResponse getCalendar(@RequestParam(name = "year", required = false) Integer year) {
+        return postService.getCalendarByYear(year);
     }
 
 }

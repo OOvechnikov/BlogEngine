@@ -1,21 +1,20 @@
 package main.service;
 
-import main.api.response.post.*;
+import main.api.response.CalendarResponse;
+import main.api.response.post.PostResponse;
+import main.api.response.post.User;
 import main.model.ModerationStatus;
 import main.model.Post;
 import main.model.PostVote;
 import main.repositories.PostRepository;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,8 +37,9 @@ public class PostService {
         if (mode == null) mode = "recent";
 
         long time = new Date().getTime();
-        PostResponse postResponse = new PostResponse();
         List<Post> posts = getActiveAcceptedLessThenNowPosts();
+
+        PostResponse postResponse = new PostResponse();
         postResponse.setCount(posts.size());
         postResponse.setPosts(getPostsForPostResponse(getPostsFromDBByParameters(offset, limit, mode)));
         logger.info("Working time with '" + mode + "' parameter: " + (new Date().getTime() - time) + "ms");
@@ -52,12 +52,40 @@ public class PostService {
         if (query == null || query.equals("") || query.matches(" +")) return getPostResponseByPage(offset, limit, "recent");
 
         long time = new Date().getTime();
-        PostResponse postResponse = new PostResponse();
         List<Post> posts = postRepository.findAllByIsActiveAndModerationStatusAndTimeLessThanAndTitleAndTextContaining(query);
+
+        PostResponse postResponse = new PostResponse();
         postResponse.setCount(posts.size());
         postResponse.setPosts(getPostsForPostResponse(getFormattedList(posts, offset, limit)));
         logger.info("Working time with query request '" + query + "': " + (new Date().getTime() - time) + "ms");
         return postResponse;
+    }
+
+    public CalendarResponse getCalendarByYear(Integer year) {
+        if (year == null || year == 0) year = GregorianCalendar.getInstance().get(Calendar.YEAR);
+
+        List<Post> posts = getActiveAcceptedLessThenNowPosts();
+
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        Set<Integer> responseYears = new TreeSet<>();
+        Map<String, Integer> responsePosts = new HashMap();
+        for (Post post : posts) {
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(post.getTime());
+            responseYears.add(calendar.get(Calendar.YEAR));
+            if (calendar.get(Calendar.YEAR) == year) {
+                LocalDate ld = LocalDate.of(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH));
+                String date = dtf.format(ld);
+                if (!responsePosts.containsKey(date))
+                    responsePosts.put(date, 1);
+                else responsePosts.put(date, responsePosts.get(date) + 1);
+            }
+        }
+
+        CalendarResponse calendarResponse = new CalendarResponse();
+        calendarResponse.setYears(responseYears);
+        calendarResponse.setPosts(responsePosts);
+        return calendarResponse;
     }
 
 
