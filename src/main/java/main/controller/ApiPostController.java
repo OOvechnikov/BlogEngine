@@ -24,8 +24,8 @@ public class ApiPostController {
     @GetMapping("/post")
     public PostResponse posts(@RequestParam(name = "offset", required = false) Integer offset,
                               @RequestParam(name = "limit", required = false) Integer limit,
-                              @RequestParam(name = "mode") String mode) {
-        return postService.getPostResponse(offset, limit, mode);
+                              @RequestParam(name = "mode", required = false) String mode) {
+        return postService.getPostResponseByPage(offset, limit, mode);
     }
 
 }
