@@ -22,10 +22,17 @@ public class ApiPostController {
 
 
     @GetMapping("/post")
-    public PostResponse posts(@RequestParam(name = "offset", required = false) Integer offset,
+    public PostResponse getPosts(@RequestParam(name = "offset", required = false) Integer offset,
                               @RequestParam(name = "limit", required = false) Integer limit,
                               @RequestParam(name = "mode", required = false) String mode) {
         return postService.getPostResponseByPage(offset, limit, mode);
+    }
+
+    @GetMapping("/post/search")
+    public PostResponse getPostsBySearch(@RequestParam(name = "offset", required = false) Integer offset,
+                                         @RequestParam(name = "limit", required = false) Integer limit,
+                                         @RequestParam(name = "query", required = false) String query) {
+        return postService.getPostsBySearch(offset, limit, query);
     }
 
 }

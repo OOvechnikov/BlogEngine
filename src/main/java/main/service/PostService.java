@@ -13,8 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class PostService {
@@ -35,32 +37,52 @@ public class PostService {
         if (limit == null) limit = 10;
         if (mode == null) mode = "recent";
 
-        PostResponse postResponse = new PostResponse();
         long time = new Date().getTime();
-        postResponse.setCount(postRepository.findAllByIsActiveAndModerationStatusAndTimeLessThan(1, ModerationStatus.ACCEPTED, new Date()).size());
+        PostResponse postResponse = new PostResponse();
+        List<Post> posts = getActiveAcceptedLessThenNowPosts();
+        postResponse.setCount(posts.size());
         postResponse.setPosts(getPostsForPostResponse(getPostsFromDBByParameters(offset, limit, mode)));
         logger.info("Working time with '" + mode + "' parameter: " + (new Date().getTime() - time) + "ms");
         return postResponse;
     }
 
+    public PostResponse getPostsBySearch(Integer offset, Integer limit, String query) {
+        if (offset == null) offset = 0;
+        if (limit == null) limit = 10;
+        if (query == null || query.equals("") || query.matches(" +")) return getPostResponseByPage(offset, limit, "recent");
+
+        long time = new Date().getTime();
+        PostResponse postResponse = new PostResponse();
+        List<Post> posts = postRepository.findAllByIsActiveAndModerationStatusAndTimeLessThanAndTitleAndTextContaining(query);
+        postResponse.setCount(posts.size());
+        postResponse.setPosts(getPostsForPostResponse(getFormattedList(posts, offset, limit)));
+        logger.info("Working time with query request '" + query + "': " + (new Date().getTime() - time) + "ms");
+        return postResponse;
+    }
+
+
+
+    private List<Post> getActiveAcceptedLessThenNowPosts() {
+        return postRepository.findAllByIsActiveAndModerationStatusAndTimeLessThan(1, ModerationStatus.ACCEPTED, new Date());
+    }
+
     private List<Post> getPostsFromDBByParameters(Integer offset, Integer limit, String mode) {
         List<Post> posts;
-        Pageable nextPage = PageRequest.of(offset, limit);
         switch (mode) {
             case "recent" : {
-                posts = postRepository.findAllByIsActiveAndModerationStatusAndTimeLessThanOrderByTimeDesc(1, ModerationStatus.ACCEPTED, new Date()); //, nextPage);
+                posts = postRepository.findAllByIsActiveAndModerationStatusAndTimeLessThanOrderByTimeDesc(1, ModerationStatus.ACCEPTED, new Date());
                 return getFormattedList(posts, offset, limit);
             }
             case "popular" : {
-                posts = postRepository.findAllByIsActiveAndModerationStatusAndTimeLessThanOrderByCommentsCount(1, ModerationStatus.ACCEPTED, new Date()); //, nextPage);
+                posts = postRepository.findAllByIsActiveAndModerationStatusAndTimeLessThanOrderByCommentsCount(1, ModerationStatus.ACCEPTED, new Date());
                 return getFormattedList(posts, offset, limit);
             }
             case "best" : {
-                posts = postRepository.findAllByIsActiveAndModerationStatusAndTimeLessThanOrderByLikesCount(1, ModerationStatus.ACCEPTED, new Date()); //, nextPage);
+                posts = postRepository.findAllByIsActiveAndModerationStatusAndTimeLessThanOrderByLikesCount();
                 return getFormattedList(posts, offset, limit);
             }
             case "early" : {
-                posts = postRepository.findAllByIsActiveAndModerationStatusAndTimeLessThanOrderByTimeAsc(1, ModerationStatus.ACCEPTED, new Date()); //, nextPage);
+                posts = postRepository.findAllByIsActiveAndModerationStatusAndTimeLessThanOrderByTimeAsc(1, ModerationStatus.ACCEPTED, new Date());
                 return getFormattedList(posts, offset, limit);
             }
         }
@@ -103,6 +125,13 @@ public class PostService {
         if (offset >= posts.size()) return new ArrayList<>();
         if (offset + limit > posts.size()) return posts.subList(offset, posts.size());
         return posts.subList(offset, offset + limit);
+    }
+
+    private List<Post> getPostsBySearchQuery (List<Post> posts, String query) {
+        return posts.stream()
+                .filter(post -> post.getTitle().contains(query) || post.getText().contains(query))
+                .sorted(Comparator.comparing(Post::getTime).reversed())
+                .collect(Collectors.toList());
     }
 
 }
