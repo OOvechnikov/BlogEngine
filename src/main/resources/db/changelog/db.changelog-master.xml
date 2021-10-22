@@ -8,6 +8,12 @@
    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
 
     <include file="db/changelog/liquibase-ChangeLog_init.yaml"/>
-    <include file="data.sql"/>
+    <include file="db/changelog/data/global_settings.sql"/>
+    <include file="db/changelog/data/users.sql"/>
+    <include file="db/changelog/data/posts.sql"/>
+    <include file="db/changelog/data/post_votes.sql"/>
+    <include file="db/changelog/data/tags.sql"/>
+    <include file="db/changelog/data/tag2post.sql"/>
+    <include file="db/changelog/data/post_comments.sql"/>
 
 </databaseChangeLog>
