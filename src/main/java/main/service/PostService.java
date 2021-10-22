@@ -2,11 +2,10 @@ package main.service;
 
 import main.api.response.CalendarResponse;
 import main.api.response.PostByIdResponse;
+import main.api.response.post.Comment;
 import main.api.response.post.PostResponse;
 import main.api.response.post.User;
-import main.model.ModerationStatus;
-import main.model.Post;
-import main.model.PostVote;
+import main.model.*;
 import main.repositories.PostRepository;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -106,8 +105,61 @@ public class PostService {
     }
 
     public PostByIdResponse getPostById(Integer id) {
+        Post post;
+        if (!postRepository.findById(id).isPresent()) {
+            return null;
+        }
 
-        return null;
+        post = postRepository.findById(id).get();
+        if (post.getIsActive() == 0 || post.getModerationStatus() != ModerationStatus.ACCEPTED || post.getTime().after(new Date())) {
+            return null;
+        }
+
+        //likes/dislikes
+        int likeCount = 0;
+        int dislikeCount = 0;
+        for (PostVote vote : post.getVotes()) {
+            if (vote.getValue() == 1) likeCount++;
+            else dislikeCount++;
+        }
+
+        //comments
+        List<PostComment> commentsToPost = postRepository.findCommentToPostById(id);
+        List<Comment> comments = new ArrayList<>();
+        for (PostComment postComment : commentsToPost) {
+            comments.add(new Comment(
+                            postComment.getId(),
+                            (int) (postComment.getTime().getTime() / 1000),
+                            postComment.getText(),
+                            new User(
+                                    postComment.getUser().getId(),
+                                    postComment.getUser().getName(),
+                                    postComment.getUser().getPhoto())
+                    )
+            );
+        }
+
+        //tags
+        List<String> tags = new ArrayList<>();
+        for (Tag tag : post.getTags()) {
+            tags.add(tag.getName());
+        }
+
+        PostByIdResponse postByIdResponse = new PostByIdResponse(
+                post.getId(),
+                (int) (post.getTime().getTime() / 1000),
+                true, //!!!!
+                new User(post.getUser().getId(), post.getUser().getName(), null),
+                post.getTitle(),
+                post.getText(),
+                likeCount,
+                dislikeCount,
+                post.getViewCount(),
+                comments,
+                tags
+        );
+
+        return postByIdResponse;
     }
 
 
@@ -148,8 +200,8 @@ public class PostService {
                 else dislikeCount++;
             }
             showedPosts.add(new main.api.response.post.Post(post.getId(),
-                    post.getTime().getTime() / 1000,
-                    new User(post.getUser().getId(), post.getUser().getName()),
+                    (int) (post.getTime().getTime() / 1000),
+                    new User(post.getUser().getId(), post.getUser().getName(), null),
                     post.getTitle(),
                     getAnnounce(post.getText()),
                     likeCount,

@@ -1,30 +1,38 @@
-package main.api.response.post;
+package main.api.response;
 
-public class Post {
+import main.api.response.post.Comment;
+import main.api.response.post.User;
 
+import java.util.List;
+
+public class PostByIdResponse {
     private int id;
     private int timestamp;
+    private boolean active;
     private User user;
     private String title;
-    private String announce;
+    private String text;
     private int likeCount;
     private int dislikeCount;
-    private int commentCount;
     private int viewCount;
+    private List<Comment> comments;
+    private List<String> tags;
 
-
-
-    public Post(int id, int timestamp, User user, String title, String announce, int likeCount, int dislikeCount, int commentCount, int viewCount) {
+    public PostByIdResponse(int id, int timestamp, boolean active, User user, String title, String text, int likeCount, int dislikeCount, int viewCount, List<Comment> comments, List<String> tags) {
         this.id = id;
         this.timestamp = timestamp;
+        this.active = active;
         this.user = user;
         this.title = title;
-        this.announce = announce;
+        this.text = text;
         this.likeCount = likeCount;
         this.dislikeCount = dislikeCount;
-        this.commentCount = commentCount;
         this.viewCount = viewCount;
+        this.comments = comments;
+        this.tags = tags;
     }
+
+
 
     public int getId() {
         return id;
@@ -40,6 +48,14 @@ public class Post {
 
     public void setTimestamp(int timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public User getUser() {
@@ -58,12 +74,12 @@ public class Post {
         this.title = title;
     }
 
-    public String getAnnounce() {
-        return announce;
+    public String getText() {
+        return text;
     }
 
-    public void setAnnounce(String announce) {
-        this.announce = announce;
+    public void setText(String text) {
+        this.text = text;
     }
 
     public int getLikeCount() {
@@ -82,14 +98,6 @@ public class Post {
         this.dislikeCount = dislikeCount;
     }
 
-    public int getCommentCount() {
-        return commentCount;
-    }
-
-    public void setCommentCount(int commentCount) {
-        this.commentCount = commentCount;
-    }
-
     public int getViewCount() {
         return viewCount;
     }
@@ -98,4 +106,19 @@ public class Post {
         this.viewCount = viewCount;
     }
 
+    public List<Comment> getComments() {
+        return comments;
+    }
+
+    public void setComments(List<Comment> comments) {
+        this.comments = comments;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
 }

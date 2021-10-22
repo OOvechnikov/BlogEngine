@@ -4,13 +4,15 @@ public class User {
 
     private int id;
     private String name;
+    private String photo;
 
-
-
-    public User(int id, String name) {
+    public User(int id, String name, String photo) {
         this.id = id;
         this.name = name;
+        this.photo = photo;
     }
+
+
 
     public int getId() {
         return id;

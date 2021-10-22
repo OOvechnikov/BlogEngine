@@ -6,6 +6,8 @@ import main.api.response.PostByIdResponse;
 import main.api.response.post.PostResponse;
 import main.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -55,8 +57,11 @@ public class ApiPostController {
     }
 
     @GetMapping("/post/{id}")
-    public PostByIdResponse getPostById(@PathVariable(name = "id") Integer id) {
-        return postService.getPostById(id);
+    public ResponseEntity<PostByIdResponse> getPostById(@PathVariable(name = "id") Integer id) {
+        PostByIdResponse response = postService.getPostById(id);
+        if (response == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        return ResponseEntity.ok(response);
     }
 
 }
