@@ -1,6 +1,7 @@
 package main.service;
 
 import main.api.response.CalendarResponse;
+import main.api.response.PostByIdResponse;
 import main.api.response.post.PostResponse;
 import main.api.response.post.User;
 import main.model.ModerationStatus;
@@ -15,13 +16,13 @@ import org.springframework.web.util.HtmlUtils;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class PostService {
 
     private final PostRepository postRepository;
 
+    private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private final Logger logger = Logger.getLogger(PostService.class);
 
     @Autowired
@@ -39,11 +40,8 @@ public class PostService {
         long time = new Date().getTime();
         List<Post> posts = getActiveAcceptedLessThenNowPosts();
 
-        PostResponse postResponse = new PostResponse();
-        postResponse.setCount(posts.size());
-        postResponse.setPosts(getPostsForPostResponse(getPostsFromDBByParameters(offset, limit, mode)));
         logger.info("Working time with '" + mode + "' parameter: " + (new Date().getTime() - time) + "ms");
-        return postResponse;
+        return getPostResponse(posts.size(), getPostsFromDBByParameters(offset, limit, mode), offset, limit);
     }
 
     public PostResponse getPostsBySearch(Integer offset, Integer limit, String query) {
@@ -52,13 +50,10 @@ public class PostService {
         if (query == null || query.equals("") || query.matches(" +")) return getPostResponseByPage(offset, limit, "recent");
 
         long time = new Date().getTime();
-        List<Post> posts = postRepository.findAllByIsActiveAndModerationStatusAndTimeLessThanAndTitleAndTextContaining(query);
+        List<Post> posts = postRepository.findAllByIsActiveAndAcceptedAndTimeLessThanNowAndTitleAndTextContaining(query);
 
-        PostResponse postResponse = new PostResponse();
-        postResponse.setCount(posts.size());
-        postResponse.setPosts(getPostsForPostResponse(getFormattedList(posts, offset, limit)));
         logger.info("Working time with query request '" + query + "': " + (new Date().getTime() - time) + "ms");
-        return postResponse;
+        return getPostResponse(posts.size(), posts, offset, limit);
     }
 
     public CalendarResponse getCalendarByYear(Integer year) {
@@ -66,7 +61,7 @@ public class PostService {
 
         List<Post> posts = getActiveAcceptedLessThenNowPosts();
 
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        //DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         Set<Integer> responseYears = new TreeSet<>();
         Map<String, Integer> responsePosts = new HashMap();
         for (Post post : posts) {
@@ -88,6 +83,32 @@ public class PostService {
         return calendarResponse;
     }
 
+    public PostResponse getPostsByDate(Integer offset, Integer limit, String date) {
+        if (offset == null) offset = 0;
+        if (limit == null) limit = 10;
+
+        long time = new Date().getTime();
+        List<Post> posts =  postRepository.findAllByIsActiveAndAcceptedAndByDate(date);
+
+        logger.info("Working time with date request '" + date + "': " + (new Date().getTime() - time) + "ms");
+        return getPostResponse(posts.size(), posts, offset, limit);
+    }
+
+    public PostResponse getPostsByTag(Integer offset, Integer limit, String tag) {
+        if (offset == null) offset = 0;
+        if (limit == null) limit = 10;
+
+        long time = new Date().getTime();
+        List<Post> posts = postRepository.findAllByIsActiveAndAcceptedAndTagEquals(tag);
+
+        logger.info("Working time with tag request '" + tag + "': " + (new Date().getTime() - time) + "ms");
+        return getPostResponse(posts.size(), posts, offset, limit);
+    }
+
+    public PostByIdResponse getPostById(Integer id) {
+
+        return null;
+    }
 
 
     private List<Post> getActiveAcceptedLessThenNowPosts() {
@@ -155,11 +176,11 @@ public class PostService {
         return posts.subList(offset, offset + limit);
     }
 
-    private List<Post> getPostsBySearchQuery (List<Post> posts, String query) {
-        return posts.stream()
-                .filter(post -> post.getTitle().contains(query) || post.getText().contains(query))
-                .sorted(Comparator.comparing(Post::getTime).reversed())
-                .collect(Collectors.toList());
+    private PostResponse getPostResponse(int count, List<Post> posts, int offset, int limit) {
+        PostResponse postResponse = new PostResponse();
+        postResponse.setCount(count);
+        postResponse.setPosts(getPostsForPostResponse(getFormattedList(posts, offset, limit)));
+        return postResponse;
     }
 
 }
