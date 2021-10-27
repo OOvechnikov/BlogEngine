@@ -28,5 +28,7 @@ engine:
   copyright: Олег Овечников
   copyrightFrom: 2021
 
+captcha:
+  termOf: 60
 
 
