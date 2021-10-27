@@ -2,7 +2,7 @@ package main.controller;
 
 import main.api.response.CaptchaResponse;
 import main.api.response.RegisterResponse;
-import main.request.RegisterRequest;
+import main.api.request.RegisterRequest;
 import main.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;

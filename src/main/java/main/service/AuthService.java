@@ -8,7 +8,7 @@ import main.model.CaptchaCode;
 import main.model.User;
 import main.repositories.CaptchaRepository;
 import main.repositories.UserRepository;
-import main.request.RegisterRequest;
+import main.api.request.RegisterRequest;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
