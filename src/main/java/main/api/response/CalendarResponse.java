@@ -7,6 +7,13 @@ public class CalendarResponse {
     private Set<Integer> years;
     private Map<String, Integer> posts;
 
+    public CalendarResponse(Set<Integer> years, Map<String, Integer> posts) {
+        this.years = years;
+        this.posts = posts;
+    }
+
+
+
     public Set<Integer> getYears() {
         return years;
     }

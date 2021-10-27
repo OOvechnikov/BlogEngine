@@ -5,12 +5,12 @@ public class AuthResponse {
     private boolean result;
     private User user;
 
-
-
     public AuthResponse(boolean result, User user) {
         this.result = result;
         this.user = user;
     }
+
+
 
     public boolean isResult() {
         return result;

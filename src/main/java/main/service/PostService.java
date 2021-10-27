@@ -8,9 +8,9 @@ import main.api.response.post.User;
 import main.model.*;
 import main.repositories.PostRepository;
 import org.apache.log4j.Logger;
+import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.util.HtmlUtils;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -40,7 +40,7 @@ public class PostService {
         List<Post> posts = getActiveAcceptedLessThenNowPosts();
 
         logger.info("Working time with '" + mode + "' parameter: " + (new Date().getTime() - time) + "ms");
-        return getPostResponse(posts.size(), getPostsFromDBByParameters(offset, limit, mode), offset, limit);
+        return new PostResponse(posts.size(), getPostsForPostResponse(getPostsFromDBByParameters(offset, limit, mode)));
     }
 
     public PostResponse getPostsBySearch(Integer offset, Integer limit, String query) {
@@ -52,7 +52,7 @@ public class PostService {
         List<Post> posts = postRepository.findAllByIsActiveAndAcceptedAndTimeLessThanNowAndTitleAndTextContaining(query);
 
         logger.info("Working time with query request '" + query + "': " + (new Date().getTime() - time) + "ms");
-        return getPostResponse(posts.size(), posts, offset, limit);
+        return new PostResponse(posts.size(), getPostsForPostResponse(getFormattedList(posts, offset, limit)));
     }
 
     public CalendarResponse getCalendarByYear(Integer year) {
@@ -60,7 +60,6 @@ public class PostService {
 
         List<Post> posts = getActiveAcceptedLessThenNowPosts();
 
-        //DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         Set<Integer> responseYears = new TreeSet<>();
         Map<String, Integer> responsePosts = new HashMap();
         for (Post post : posts) {
@@ -76,10 +75,7 @@ public class PostService {
             }
         }
 
-        CalendarResponse calendarResponse = new CalendarResponse();
-        calendarResponse.setYears(responseYears);
-        calendarResponse.setPosts(responsePosts);
-        return calendarResponse;
+        return new CalendarResponse(responseYears, responsePosts);
     }
 
     public PostResponse getPostsByDate(Integer offset, Integer limit, String date) {
@@ -90,7 +86,7 @@ public class PostService {
         List<Post> posts =  postRepository.findAllByIsActiveAndAcceptedAndByDate(date);
 
         logger.info("Working time with date request '" + date + "': " + (new Date().getTime() - time) + "ms");
-        return getPostResponse(posts.size(), posts, offset, limit);
+        return new PostResponse(posts.size(), getPostsForPostResponse(getFormattedList(posts, offset, limit)));
     }
 
     public PostResponse getPostsByTag(Integer offset, Integer limit, String tag) {
@@ -101,7 +97,7 @@ public class PostService {
         List<Post> posts = postRepository.findAllByIsActiveAndAcceptedAndTagEquals(tag);
 
         logger.info("Working time with tag request '" + tag + "': " + (new Date().getTime() - time) + "ms");
-        return getPostResponse(posts.size(), posts, offset, limit);
+        return new PostResponse(posts.size(), getPostsForPostResponse(getFormattedList(posts, offset, limit)));
     }
 
     public PostByIdResponse getPostById(Integer id) {
@@ -145,10 +141,10 @@ public class PostService {
             tags.add(tag.getName());
         }
 
-        PostByIdResponse postByIdResponse = new PostByIdResponse(
+        return new PostByIdResponse(
                 post.getId(),
                 (int) (post.getTime().getTime() / 1000),
-                true, //!!!!
+                post.getIsActive() == 1,
                 new User(post.getUser().getId(), post.getUser().getName(), null),
                 post.getTitle(),
                 post.getText(),
@@ -158,9 +154,8 @@ public class PostService {
                 comments,
                 tags
         );
-
-        return postByIdResponse;
     }
+
 
 
     private List<Post> getActiveAcceptedLessThenNowPosts() {
@@ -214,10 +209,10 @@ public class PostService {
     }
 
     private String getAnnounce(String text) {
-        text = HtmlUtils.htmlEscape(text);
+        text = Jsoup.parse(text).text();
         if (text.length() <= 150) return text;
         else {
-            text = text.substring(0, 150) + "...";
+            text = text.substring(0, 146) + "...";
         }
         return text;
     }
@@ -226,13 +221,6 @@ public class PostService {
         if (offset >= posts.size()) return new ArrayList<>();
         if (offset + limit > posts.size()) return posts.subList(offset, posts.size());
         return posts.subList(offset, offset + limit);
-    }
-
-    private PostResponse getPostResponse(int count, List<Post> posts, int offset, int limit) {
-        PostResponse postResponse = new PostResponse();
-        postResponse.setCount(count);
-        postResponse.setPosts(getPostsForPostResponse(getFormattedList(posts, offset, limit)));
-        return postResponse;
     }
 
 }

@@ -45,6 +45,17 @@ public class User {
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "user")
     private List<PostComment> comments;
 
+    public User() {
+    }
+
+    public User(int isModerator, Date regTime, String name, String email, String password) {
+        this.isModerator = isModerator;
+        this.regTime = regTime;
+        this.name = name;
+        this.email = email;
+        this.password = password;
+    }
+
 
 
     public int getId() {

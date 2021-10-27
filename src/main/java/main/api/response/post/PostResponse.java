@@ -7,6 +7,13 @@ public class PostResponse {
     private int count;
     private List<Post> posts;
 
+    public PostResponse(int count, List<Post> posts) {
+        this.count = count;
+        this.posts = posts;
+    }
+
+
+
     public int getCount() {
         return count;
     }

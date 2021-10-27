@@ -20,6 +20,15 @@ public class CaptchaCode {
     @Column(nullable = false)
     private String secretCode;
 
+    public CaptchaCode() {
+    }
+
+    public CaptchaCode(Date time, String code, String secretCode) {
+        this.time = time;
+        this.code = code;
+        this.secretCode = secretCode;
+    }
+
 
 
     public int getId() {
