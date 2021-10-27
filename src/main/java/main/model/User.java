@@ -1,5 +1,10 @@
 package main.model;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.Date;
@@ -20,12 +25,16 @@ public class User {
     private Date regTime;
 
     @Column(nullable = false)
+    @NotBlank
+    @Size(min = 2, max = 40, message = "Name must be between 2 and 40 characters")
     private String name;
 
     @Column(nullable = false)
+    @Email(message = "Should be email")
     private String email;
 
     @Column(nullable = false)
+    @Min(value = 6, message = "Password must be greater than 6 symbols")
     private String password;
 
     private String code;
@@ -44,6 +53,17 @@ public class User {
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "user")
     private List<PostComment> comments;
+
+    public User() {
+    }
+
+    public User(int isModerator, Date regTime, String name, String email, String password) {
+        this.isModerator = isModerator;
+        this.regTime = regTime;
+        this.name = name;
+        this.email = email;
+        this.password = password;
+    }
 
 
 
