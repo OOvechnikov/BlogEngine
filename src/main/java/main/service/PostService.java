@@ -7,46 +7,51 @@ import main.api.response.post.PostResponse;
 import main.api.response.post.User;
 import main.model.*;
 import main.repositories.PostRepository;
+import main.repositories.UserRepository;
 import org.apache.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.security.Principal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class PostService {
 
     private final PostRepository postRepository;
+    private final UserRepository userRepository;
 
     private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private final Logger logger = Logger.getLogger(PostService.class);
 
     @Autowired
-    public PostService(PostRepository postRepository) {
+    public PostService(PostRepository postRepository, UserRepository userRepository) {
         this.postRepository = postRepository;
+        this.userRepository = userRepository;
     }
 
 
 
-    public PostResponse getPostResponseByPage(Integer offset, Integer limit, String mode) {
+    public PostResponse getPostResponse(Integer offset, Integer limit, String mode) {
         if (offset == null) offset = 0;
         if (limit == null) limit = 10;
         if (mode == null) mode = "recent";
 
         long time = new Date().getTime();
-        List<Post> posts = getActiveAcceptedLessThenNowPosts();
+        List<Post> posts = getPostsFromDBByParameters(mode, null);
 
         logger.info("Working time with '" + mode + "' parameter: " + (new Date().getTime() - time) + "ms");
-        return new PostResponse(posts.size(), getPostsForPostResponse(getPostsFromDBByParameters(offset, limit, mode)));
+        return new PostResponse(posts.size(), getPostsForPostResponse(getFormattedList(posts, offset, limit)));
     }
 
     public PostResponse getPostsBySearch(Integer offset, Integer limit, String query) {
         if (offset == null) offset = 0;
         if (limit == null) limit = 10;
-        if (query == null || query.equals("") || query.matches(" +")) return getPostResponseByPage(offset, limit, "recent");
+        if (query == null || query.equals("") || query.matches(" +")) return getPostResponse(offset, limit, "recent");
 
         long time = new Date().getTime();
         List<Post> posts = postRepository.findAllByIsActiveAndAcceptedAndTimeLessThanNowAndTitleAndTextContaining(query);
@@ -61,7 +66,7 @@ public class PostService {
         List<Post> posts = getActiveAcceptedLessThenNowPosts();
 
         Set<Integer> responseYears = new TreeSet<>();
-        Map<String, Integer> responsePosts = new HashMap();
+        Map<String, Integer> responsePosts = new HashMap<>();
         for (Post post : posts) {
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(post.getTime());
@@ -100,14 +105,18 @@ public class PostService {
         return new PostResponse(posts.size(), getPostsForPostResponse(getFormattedList(posts, offset, limit)));
     }
 
-    public PostByIdResponse getPostById(Integer id) {
+    public PostByIdResponse getPostById(Integer id, Principal principal) {
         Post post;
         if (!postRepository.findById(id).isPresent()) {
             return null;
         }
-
         post = postRepository.findById(id).get();
-        if (post.getIsActive() == 0 || post.getModerationStatus() != ModerationStatus.ACCEPTED || post.getTime().after(new Date())) {
+
+        main.model.User currentUser = userRepository.findByEmail(principal.getName());
+
+        if (currentUser == null && (post.getIsActive() == 0 || post.getModerationStatus() != ModerationStatus.ACCEPTED || post.getTime().after(new Date()))) {
+            return null;
+        } else if (currentUser != null && (!currentUser.equals(post.getUser())) && !currentUser.equals(post.getModerator())) {
             return null;
         }
 
@@ -120,7 +129,7 @@ public class PostService {
         }
 
         //comments
-        List<PostComment> commentsToPost = postRepository.findCommentToPostById(id);
+        List<PostComment> commentsToPost = postRepository.findCommentsToPostUsingPostId(id);
         List<Comment> comments = new ArrayList<>();
         for (PostComment postComment : commentsToPost) {
             comments.add(new Comment(
@@ -136,10 +145,7 @@ public class PostService {
         }
 
         //tags
-        List<String> tags = new ArrayList<>();
-        for (Tag tag : post.getTags()) {
-            tags.add(tag.getName());
-        }
+        List<String> tags = post.getTags().stream().map(Tag::getName).collect(Collectors.toList());
 
         return new PostByIdResponse(
                 post.getId(),
@@ -156,33 +162,96 @@ public class PostService {
         );
     }
 
+    public PostResponse getMyPosts(Integer offset, Integer limit, String status, Principal principal) {
+        if (offset == null) offset = 0;
+        if (limit == null) limit = 10;
+        if (status == null) status = "inactive";
+
+        List<Post> posts = getPostsFromDBByParameters(status, principal);
+
+        return new PostResponse(posts.size(), getPostsForPostResponse(getFormattedList(posts, offset, limit)));
+    }
+
+    public PostResponse getModeratedPosts(Integer offset, Integer limit, String status, Principal principal) {
+        if (offset == null) offset = 0;
+        if (limit == null) limit = 10;
+        if (status == null) status = "new";
+        if (status.equals("declined")) {
+            status = "moderated_declined";
+        }
+
+        List<Post> posts = getPostsFromDBByParameters(status, principal);
+
+        return new PostResponse(posts.size(), getPostsForPostResponse(getFormattedList(posts, offset, limit)));
+    }
+
 
 
     private List<Post> getActiveAcceptedLessThenNowPosts() {
         return postRepository.findAllByIsActiveAndModerationStatusAndTimeLessThan(1, ModerationStatus.ACCEPTED, new Date());
     }
 
-    private List<Post> getPostsFromDBByParameters(Integer offset, Integer limit, String mode) {
+    private List<Post> getPostsFromDBByParameters(String mode, Principal principal) {
         List<Post> posts;
         switch (mode) {
             case "recent" : {
                 posts = postRepository.findAllByIsActiveAndModerationStatusAndTimeLessThanOrderByTimeDesc(1, ModerationStatus.ACCEPTED, new Date());
-                return getFormattedList(posts, offset, limit);
+                return posts;
             }
             case "popular" : {
                 posts = postRepository.findAllByIsActiveAndModerationStatusAndTimeLessThanOrderByCommentsCount(1, ModerationStatus.ACCEPTED, new Date());
-                return getFormattedList(posts, offset, limit);
+                return posts;
             }
             case "best" : {
                 posts = postRepository.findAllByIsActiveAndModerationStatusAndTimeLessThanOrderByLikesCount();
-                return getFormattedList(posts, offset, limit);
+                return posts;
             }
             case "early" : {
                 posts = postRepository.findAllByIsActiveAndModerationStatusAndTimeLessThanOrderByTimeAsc(1, ModerationStatus.ACCEPTED, new Date());
-                return getFormattedList(posts, offset, limit);
+                return posts;
             }
+
+            case "inactive" : {
+                posts = postRepository.findAllByIsActiveAndUser_email(0, principal.getName());
+                return posts;
+            }
+            case "pending" : {
+                posts = postRepository.findAllByIsActiveAndModerationStatusAndUser_email(1, ModerationStatus.NEW, principal.getName());
+                return posts;
+            }
+            case "declined" : {
+                posts = postRepository.findAllByIsActiveAndModerationStatusAndUser_email(1, ModerationStatus.DECLINED, principal.getName());
+                return posts;
+            }
+            case "published" : {
+                posts = postRepository.findAllByIsActiveAndModerationStatusAndUser_email(1, ModerationStatus.ACCEPTED, principal.getName());
+                return posts;
+            }
+
+            case "new" : {
+                main.model.User currentUser = userRepository.findByEmail(principal.getName());
+                posts = currentUser.getModeratedPosts().stream()
+                        .filter(p -> p.getIsActive() == 1 && p.getModerationStatus().equals(ModerationStatus.NEW))
+                        .collect(Collectors.toList());
+                return posts;
+            }
+            case "moderated_declined" : {
+                main.model.User currentUser = userRepository.findByEmail(principal.getName());
+                posts = currentUser.getModeratedPosts().stream()
+                        .filter(p -> p.getIsActive() == 1 && p.getModerationStatus().equals(ModerationStatus.DECLINED))
+                        .collect(Collectors.toList());
+                return posts;
+            }
+            case "accepted" : {
+                main.model.User currentUser = userRepository.findByEmail(principal.getName());
+                posts = currentUser.getModeratedPosts().stream()
+                        .filter(p -> p.getIsActive() == 1 && p.getModerationStatus().equals(ModerationStatus.ACCEPTED))
+                        .collect(Collectors.toList());
+                return posts;
+            }
+
+            default: return new ArrayList<>();
         }
-        return null;
     }
 
     private List<main.api.response.post.Post> getPostsForPostResponse(List<Post> posts) {

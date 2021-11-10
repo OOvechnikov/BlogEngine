@@ -2,19 +2,25 @@ package main.service;
 
 import com.github.cage.Cage;
 import com.github.cage.GCage;
-import main.api.response.CaptchaResponse;
-import main.api.response.RegisterResponse;
+import main.api.request.LoginRequest;
+import main.api.request.RegisterRequest;
+import main.api.response.*;
 import main.model.CaptchaCode;
 import main.model.User;
 import main.repositories.CaptchaRepository;
 import main.repositories.UserRepository;
-import main.api.request.RegisterRequest;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.Principal;
 import java.util.Base64;
 import java.util.Date;
 
@@ -25,11 +31,13 @@ public class AuthService {
     private final UserRepository userRepository;
     @Value("${captcha.termOf}")
     private String captchaTermOf;
+    private final AuthenticationManager authenticationManager;
 
     @Autowired
-    public AuthService(CaptchaRepository captchaRepository, UserRepository userRepository) {
+    public AuthService(CaptchaRepository captchaRepository, UserRepository userRepository, AuthenticationManager authenticationManager) {
         this.captchaRepository = captchaRepository;
         this.userRepository = userRepository;
+        this.authenticationManager = authenticationManager;
     }
 
 
@@ -54,30 +62,46 @@ public class AuthService {
         validatePassword(request, response);
         validateName(request, response);
 
-        if (!response.isResult()) {
-            return response;
+        if (response.isResult()) {
+            userRepository.save(new User(0, new Date(), request.getName(), request.getEMail(), request.getPassword()));
         }
-
-        userRepository.save(new User(0, new Date(), request.getName(), request.getEMail(), request.getPassword()));
         return response;
+    }
+
+    public LoginResponse getLoginResponse(LoginRequest loginRequest) {
+        Authentication auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
+        );
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        org.springframework.security.core.userdetails.User user = (org.springframework.security.core.userdetails.User) auth.getPrincipal();
+        return createLoginResponse(user.getUsername());
+    }
+
+    public LogoutResponse getLogoutResponse() {
+        SecurityContextHolder.getContext().setAuthentication(null);
+        return new LogoutResponse();
+    }
+
+    public LoginResponse getCheckResponse(Principal principal) {
+        return createLoginResponse(principal.getName());
     }
 
 
 
     private void validateCaptcha(RegisterRequest request, RegisterResponse response) {
-        CaptchaCode captchaCode = captchaRepository.findBySecretCode(request.getCaptchaSecret());
-        if (captchaCode == null) {
+        if (!captchaRepository.findBySecretCode(request.getCaptchaSecret()).isPresent()) {
             response.setResult(false);
-        }
-        if (!request.getCaptcha().equals(captchaCode.getCode())) {
+            response.getErrors().put("captcha", "Нет такой капчи");
+        } else
+            if (!request.getCaptcha().equals(captchaRepository.findBySecretCode(request.getCaptchaSecret()).get().getCode())) {
             response.setResult(false);
             response.getErrors().put("captcha", "Код с картинки введен неверно");
         }
     }
 
     private void validateEMail(RegisterRequest request, RegisterResponse response) {
-        User user = userRepository.findByEmail(request.getEMail());
-        if (user != null) {
+        if (userRepository.findByEmail(request.getEMail()) != null) {
             response.setResult(false);
             response.getErrors().put("email", "Этот e-mail уже зарегистрирован");
         } else if (!request.getEMail().matches(".+@.+\\..+")) {
@@ -101,6 +125,22 @@ public class AuthService {
             response.setResult(false);
             response.getErrors().put("name", "Имя указано неверно. Должно быть от 6 до 40 символов");
         }
+    }
+
+    private LoginResponse createLoginResponse(String email) {
+        main.model.User currentUser = userRepository.findByEmail(email);
+        if (currentUser == null) {
+            throw new UsernameNotFoundException("user " + email + " not found");
+        }
+        UserLoginResponse userLoginResponse = new UserLoginResponse(
+                currentUser.getId(),
+                currentUser.getName(),
+                currentUser.getPhoto(),
+                currentUser.getEmail(),
+                currentUser.getIsModerator() == 1,
+                currentUser.getIsModerator() == 1 ? currentUser.getModeratedPostsWithStatusNEW().size() : 0,
+                currentUser.getIsModerator() == 1);
+        return new LoginResponse(true, userLoginResponse);
     }
 
 }

@@ -3,8 +3,6 @@ package main.repositories;
 import main.model.ModerationStatus;
 import main.model.Post;
 import main.model.PostComment;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -35,6 +33,9 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     @Query(value = "SELECT pc FROM PostComment pc " +
             "JOIN Post p ON p = pc.post " +
             "WHERE p.id = ?1")
-    List<PostComment> findCommentToPostById(int postId);
+    List<PostComment> findCommentsToPostUsingPostId(int postId);
+
+    List<Post> findAllByIsActiveAndUser_email(int isActive, String email);
+    List<Post> findAllByIsActiveAndModerationStatusAndUser_email(int isActive, ModerationStatus moderationStatus, String email);
 
 }

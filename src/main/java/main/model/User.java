@@ -1,14 +1,10 @@
 package main.model;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "users")
@@ -25,16 +21,12 @@ public class User {
     private Date regTime;
 
     @Column(nullable = false)
-    @NotBlank
-    @Size(min = 2, max = 40, message = "Name must be between 2 and 40 characters")
     private String name;
 
     @Column(nullable = false)
-    @Email(message = "Should be email")
     private String email;
 
     @Column(nullable = false)
-    @Min(value = 6, message = "Password must be greater than 6 symbols")
     private String password;
 
     private String code;
@@ -63,6 +55,18 @@ public class User {
         this.name = name;
         this.email = email;
         this.password = password;
+    }
+
+
+
+    public Role getRole() {
+        return isModerator == 1 ? Role.MODERATOR : Role.USER;
+    }
+
+    public List<Post> getModeratedPostsWithStatusNEW() {
+        return moderatedPosts.stream()
+                .filter(p -> p.getModerationStatus().equals(ModerationStatus.NEW) && p.getIsActive() == 1)
+                .collect(Collectors.toList());
     }
 
 
@@ -158,5 +162,4 @@ public class User {
     public void setComments(List<PostComment> comments) {
         this.comments = comments;
     }
-
 }
