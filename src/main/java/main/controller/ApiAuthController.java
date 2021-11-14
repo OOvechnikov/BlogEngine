@@ -9,6 +9,7 @@ import main.api.response.RegisterResponse;
 import main.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -25,13 +26,13 @@ public class ApiAuthController {
     }
 
 
-
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
         return ResponseEntity.ok(authService.getLoginResponse(loginRequest));
     }
 
     @GetMapping("/logout")
+    @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity<LogoutResponse> logout() {
         return ResponseEntity.ok(authService.getLogoutResponse());
     }

@@ -14,7 +14,6 @@ public class LoginResponse {
     }
 
 
-
     public boolean isResult() {
         return result;
     }

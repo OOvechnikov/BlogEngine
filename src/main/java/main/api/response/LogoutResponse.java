@@ -4,7 +4,6 @@ public class LogoutResponse {
     private boolean result = true;
 
 
-
     public boolean isResult() {
         return result;
     }

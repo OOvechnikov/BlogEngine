@@ -35,7 +35,6 @@ public class PostService {
     }
 
 
-
     public PostResponse getPostResponse(Integer offset, Integer limit, String mode) {
         if (offset == null) offset = 0;
         if (limit == null) limit = 10;
@@ -63,23 +62,16 @@ public class PostService {
     public CalendarResponse getCalendarByYear(Integer year) {
         if (year == null || year == 0) year = GregorianCalendar.getInstance().get(Calendar.YEAR);
 
-        List<Post> posts = getActiveAcceptedLessThenNowPosts();
-
-        Set<Integer> responseYears = new TreeSet<>();
-        Map<String, Integer> responsePosts = new HashMap<>();
-        for (Post post : posts) {
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTime(post.getTime());
-            responseYears.add(calendar.get(Calendar.YEAR));
-            if (calendar.get(Calendar.YEAR) == year) {
-                LocalDate ld = LocalDate.of(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH));
-                String date = dtf.format(ld);
-                if (!responsePosts.containsKey(date))
-                    responsePosts.put(date, 1);
-                else responsePosts.put(date, responsePosts.get(date) + 1);
-            }
-        }
-
+        Integer finalYear = year;
+        Set<Integer> responseYears = getActiveAcceptedLessThenNowPosts().stream().map(p -> p.getTime().getYear()).map(y -> y + 1900).collect(Collectors.toSet());
+        Map<String, Long> responsePosts = getActiveAcceptedLessThenNowPosts().stream()
+                .filter(p -> p.getTime().getYear() + 1900 == finalYear)
+                .collect(Collectors.groupingBy(p -> {
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTime(p.getTime());
+                    return dtf.format(LocalDate.of(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH)));
+                },
+                        Collectors.counting()));
         return new CalendarResponse(responseYears, responsePosts);
     }
 
@@ -112,37 +104,31 @@ public class PostService {
         }
         post = postRepository.findById(id).get();
 
-        main.model.User currentUser = userRepository.findByEmail(principal.getName());
-
-        if (currentUser == null && (post.getIsActive() == 0 || post.getModerationStatus() != ModerationStatus.ACCEPTED || post.getTime().after(new Date()))) {
-            return null;
-        } else if (currentUser != null && (!currentUser.equals(post.getUser())) && !currentUser.equals(post.getModerator())) {
+        main.model.User currentUser = null;
+        if (principal != null) {
+            currentUser = userRepository.findByEmail(principal.getName());
+        }
+        if ((currentUser == null && (post.getIsActive() == 0 || post.getModerationStatus() != ModerationStatus.ACCEPTED || post.getTime().after(new Date())))
+                ||
+                (currentUser != null && !currentUser.equals(post.getUser()) && !currentUser.equals(post.getModerator()))) {
             return null;
         }
 
         //likes/dislikes
-        int likeCount = 0;
-        int dislikeCount = 0;
-        for (PostVote vote : post.getVotes()) {
-            if (vote.getValue() == 1) likeCount++;
-            else dislikeCount++;
-        }
+        int likeCount = (int) post.getVotes().stream().filter(v -> v.getValue() == 1).count();
+        int dislikeCount = post.getVotes().size() - likeCount;
 
         //comments
-        List<PostComment> commentsToPost = postRepository.findCommentsToPostUsingPostId(id);
-        List<Comment> comments = new ArrayList<>();
-        for (PostComment postComment : commentsToPost) {
-            comments.add(new Comment(
-                            postComment.getId(),
-                            (int) (postComment.getTime().getTime() / 1000),
-                            postComment.getText(),
-                            new User(
-                                    postComment.getUser().getId(),
-                                    postComment.getUser().getName(),
-                                    postComment.getUser().getPhoto())
-                    )
-            );
-        }
+        List<Comment> comments = post.getComments().stream()
+                .map(c -> new Comment(
+                        c.getId(),
+                        (int) (c.getTime().getTime() / 1000),
+                        c.getText(),
+                        new User(
+                                c.getUser().getId(),
+                                c.getUser().getName(),
+                                c.getUser().getPhoto())))
+                .collect(Collectors.toList());
 
         //tags
         List<String> tags = post.getTags().stream().map(Tag::getName).collect(Collectors.toList());
@@ -211,6 +197,7 @@ public class PostService {
                 return posts;
             }
 
+
             case "inactive" : {
                 posts = postRepository.findAllByIsActiveAndUser_email(0, principal.getName());
                 return posts;
@@ -227,6 +214,7 @@ public class PostService {
                 posts = postRepository.findAllByIsActiveAndModerationStatusAndUser_email(1, ModerationStatus.ACCEPTED, principal.getName());
                 return posts;
             }
+
 
             case "new" : {
                 main.model.User currentUser = userRepository.findByEmail(principal.getName());

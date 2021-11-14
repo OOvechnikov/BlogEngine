@@ -16,13 +16,13 @@ public enum Role {
         this.permissions = permissions;
     }
 
-    public Set<Permission> getPermissions() {
-        return permissions;
-    }
+//    public Set<Permission> getPermissions() {
+//        return permissions;
+//    }
 
     public Set<SimpleGrantedAuthority> getAuthorities() {
         return permissions.stream()
-                .map(p -> new SimpleGrantedAuthority(p.getPermission()))
+                .map(r -> new SimpleGrantedAuthority(r.getPermission()))
                 .collect(Collectors.toSet());
     }
 

@@ -58,7 +58,6 @@ public class User {
     }
 
 
-
     public Role getRole() {
         return isModerator == 1 ? Role.MODERATOR : Role.USER;
     }
@@ -68,7 +67,6 @@ public class User {
                 .filter(p -> p.getModerationStatus().equals(ModerationStatus.NEW) && p.getIsActive() == 1)
                 .collect(Collectors.toList());
     }
-
 
 
     public int getId() {

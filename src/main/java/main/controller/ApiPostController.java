@@ -2,7 +2,6 @@ package main.controller;
 
 import main.api.response.CalendarResponse;
 import main.api.response.PostByIdResponse;
-import main.api.response.post.Post;
 import main.api.response.post.PostResponse;
 import main.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,11 +43,14 @@ public class ApiPostController {
 
     @GetMapping("/post/my")
     @PreAuthorize("hasAuthority('user:write')")
-    public PostResponse getMyPosts(@RequestParam(name = "offset", required = false) Integer offset,
+    public ResponseEntity<PostResponse> getMyPosts(@RequestParam(name = "offset", required = false) Integer offset,
                                    @RequestParam(name = "limit", required = false) Integer limit,
                                    @RequestParam(name = "status", required = false) String status,
                                    Principal principal) {
-        return postService.getMyPosts(offset, limit, status, principal);
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        }
+        return ResponseEntity.ok(postService.getMyPosts(offset, limit, status, principal));
     }
 
     @GetMapping("/post/moderation")

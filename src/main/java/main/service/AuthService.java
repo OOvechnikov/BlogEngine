@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -39,7 +40,6 @@ public class AuthService {
         this.userRepository = userRepository;
         this.authenticationManager = authenticationManager;
     }
-
 
 
     @Transactional
@@ -69,17 +69,18 @@ public class AuthService {
     }
 
     public LoginResponse getLoginResponse(LoginRequest loginRequest) {
-        Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
-        );
-
+        Authentication auth;
+        try {
+            auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
+        } catch (AuthenticationException e) {
+            return new LoginResponse(false, null);
+        }
         SecurityContextHolder.getContext().setAuthentication(auth);
         org.springframework.security.core.userdetails.User user = (org.springframework.security.core.userdetails.User) auth.getPrincipal();
         return createLoginResponse(user.getUsername());
     }
 
     public LogoutResponse getLogoutResponse() {
-        SecurityContextHolder.getContext().setAuthentication(null);
         return new LogoutResponse();
     }
 
@@ -88,13 +89,11 @@ public class AuthService {
     }
 
 
-
     private void validateCaptcha(RegisterRequest request, RegisterResponse response) {
         if (!captchaRepository.findBySecretCode(request.getCaptchaSecret()).isPresent()) {
             response.setResult(false);
             response.getErrors().put("captcha", "Нет такой капчи");
-        } else
-            if (!request.getCaptcha().equals(captchaRepository.findBySecretCode(request.getCaptchaSecret()).get().getCode())) {
+        } else if (!request.getCaptcha().equals(captchaRepository.findBySecretCode(request.getCaptchaSecret()).get().getCode())) {
             response.setResult(false);
             response.getErrors().put("captcha", "Код с картинки введен неверно");
         }

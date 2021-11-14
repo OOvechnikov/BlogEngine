@@ -5,9 +5,9 @@ import java.util.Set;
 
 public class CalendarResponse {
     private Set<Integer> years;
-    private Map<String, Integer> posts;
+    private Map<String, Long> posts;
 
-    public CalendarResponse(Set<Integer> years, Map<String, Integer> posts) {
+    public CalendarResponse(Set<Integer> years, Map<String, Long> posts) {
         this.years = years;
         this.posts = posts;
     }
@@ -22,11 +22,11 @@ public class CalendarResponse {
         this.years = years;
     }
 
-    public Map<String, Integer> getPosts() {
+    public Map<String, Long> getPosts() {
         return posts;
     }
 
-    public void setPosts(Map<String, Integer> posts) {
+    public void setPosts(Map<String, Long> posts) {
         this.posts = posts;
     }
 }

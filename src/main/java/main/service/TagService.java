@@ -24,7 +24,6 @@ public class TagService {
     }
 
 
-
     public TagResponse getTagResponseJDBC(String query) {
         long time = new Date().getTime();
         if (query == null) query = "";
@@ -59,13 +58,13 @@ public class TagService {
     }
 
 
-
     static class CustomResponse {
         private String tagName;
         private int tagFreq;
         private int postsQty;
         private double dWeight;
         private double weight;
+
 
         public String getTagName() {
             return tagName;
@@ -107,5 +106,4 @@ public class TagService {
             this.weight = weight;
         }
     }
-
 }
