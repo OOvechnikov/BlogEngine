@@ -1,15 +1,15 @@
 package main.service;
 
 import main.api.response.tag.TagResponse;
-import main.repositories.PostRepository;
-import main.repositories.TagRepository;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.sql.ResultSet;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 @Service
 public class TagService {
@@ -46,11 +46,11 @@ public class TagService {
         List<main.api.response.tag.Tag> responseTags = new ArrayList<>();
         for (int i = 0; i < customResponseList.size(); i++) {
             CustomResponse currQuery = customResponseList.get(i);
-            currQuery.setdWeight((double) currQuery.getTagFreq() / currQuery.postsQty);
+            currQuery.setDWeight((double) currQuery.getTagFreq() / currQuery.postsQty);
             if (i == 0) {
-                k = 1 / currQuery.getdWeight();
+                k = 1 / currQuery.getDWeight();
             }
-            currQuery.setWeight(currQuery.getdWeight() * k);
+            currQuery.setWeight(currQuery.getDWeight() * k);
             responseTags.add(new main.api.response.tag.Tag(currQuery.getTagName(), currQuery.getWeight()));
         }
         logger.info("Work time with JDBC2 method: " + (new Date().getTime() - time) + "ms");
@@ -82,19 +82,15 @@ public class TagService {
             this.tagFreq = tagFreq;
         }
 
-        public int getPostsQty() {
-            return postsQty;
-        }
-
         public void setPostsQty(int postsQty) {
             this.postsQty = postsQty;
         }
 
-        public double getdWeight() {
+        public double getDWeight() {
             return dWeight;
         }
 
-        public void setdWeight(double dWeight) {
+        public void setDWeight(double dWeight) {
             this.dWeight = dWeight;
         }
 

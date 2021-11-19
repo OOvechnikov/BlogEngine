@@ -2,7 +2,7 @@ package main.api.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class SettingsResponse {
+public class SettingsRequestAndResponse {
 
     @JsonProperty("MULTIUSER_MODE")
     private boolean multiuserMode;
@@ -10,6 +10,7 @@ public class SettingsResponse {
     private boolean postPremoderation;
     @JsonProperty("STATISTICS_IS_PUBLIC")
     private boolean statisticIsPublic;
+
 
     public boolean isMultiuserMode() {
         return multiuserMode;
@@ -34,5 +35,4 @@ public class SettingsResponse {
     public void setStatisticIsPublic(boolean statisticIsPublic) {
         this.statisticIsPublic = statisticIsPublic;
     }
-
 }

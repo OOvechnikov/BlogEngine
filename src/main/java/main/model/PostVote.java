@@ -10,21 +10,27 @@ public class PostVote {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id")
     private User user;
-
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "post_id")
     private Post post;
-
     @Column(nullable = false)
     private Date time;
-
     @Column(nullable = false)
     private int value;
 
+
+    public PostVote() {
+    }
+
+    public PostVote(User user, Post post, Date time, int value) {
+        this.user = user;
+        this.post = post;
+        this.time = time;
+        this.value = value;
+    }
 
 
     public int getId() {
@@ -62,5 +68,4 @@ public class PostVote {
     public void setValue(int value) {
         this.value = value;
     }
-
 }

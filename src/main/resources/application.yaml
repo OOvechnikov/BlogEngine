@@ -20,6 +20,19 @@ spring:
     enabled: true
     change-log: classpath:/db/changelog/db.changelog-master.xml
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: username
+    password: password
+    properties:
+      mail:
+        smtp:
+          auth: true
+          enable: true
+          starttls:
+            enable: true
+
 engine:
   title: DevPub
   subtitle: Разговорчики разработчиков
@@ -31,4 +44,7 @@ engine:
 captcha:
   termOf: 60
 
-
+path:
+  upload:
+   pictures: E:/Java/SkillBox/resources/upload
+   users: E:/Java/SkillBox/resources/users

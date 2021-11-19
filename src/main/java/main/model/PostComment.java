@@ -10,24 +10,31 @@ public class PostComment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-
     @Column(name = "parent_id")
     private int parentId;
-
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "post_id")
     private Post post;
-
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id")
     private User user;
-
     @Column(nullable = false)
     private Date time;
-
     @Column(length = 65 * 1024, nullable = false)
     private String text;
 
+
+    public PostComment() {
+    }
+
+    public PostComment(int id, int parentId, Post post, User user, Date time, String text) {
+        this.id = id;
+        this.parentId = parentId;
+        this.post = post;
+        this.user = user;
+        this.time = time;
+        this.text = text;
+    }
 
 
     public int getId() {
@@ -73,5 +80,4 @@ public class PostComment {
     public void setText(String text) {
         this.text = text;
     }
-
 }

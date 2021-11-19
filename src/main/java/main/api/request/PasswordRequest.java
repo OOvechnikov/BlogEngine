@@ -1,23 +1,22 @@
-package main.request;
+package main.api.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class RegisterRequest {
-    @JsonProperty("e_mail")
-    private String eMail;
+public class PasswordRequest {
+
+    private String code;
     private String password;
-    private String name;
     private String captcha;
     @JsonProperty("captcha_secret")
     private String captchaSecret;
 
 
-    public String getEMail() {
-        return eMail;
+    public String getCode() {
+        return code;
     }
 
-    public void setEMail(String eMail) {
-        this.eMail = eMail;
+    public void setCode(String code) {
+        this.code = code;
     }
 
     public String getPassword() {
@@ -26,14 +25,6 @@ public class RegisterRequest {
 
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getCaptcha() {

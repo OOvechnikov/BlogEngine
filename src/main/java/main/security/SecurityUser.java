@@ -14,6 +14,7 @@ public class SecurityUser implements UserDetails {
     private final String password;
     private final List<SimpleGrantedAuthority> authorities;
 
+
     public SecurityUser(String username, String password, List<SimpleGrantedAuthority> authorities) {
         this.username = username;
         this.password = password;
@@ -67,5 +68,4 @@ public class SecurityUser implements UserDetails {
                 user.getRole().getAuthorities()
         );
     }
-
 }

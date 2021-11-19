@@ -2,12 +2,12 @@ package main.service;
 
 import com.github.cage.Cage;
 import com.github.cage.GCage;
-import main.api.request.LoginRequest;
-import main.api.request.RegisterRequest;
+import main.api.request.*;
 import main.api.response.*;
 import main.model.CaptchaCode;
 import main.model.User;
 import main.repositories.CaptchaRepository;
+import main.repositories.PostRepository;
 import main.repositories.UserRepository;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,9 +18,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.security.Principal;
 import java.util.Base64;
 import java.util.Date;
@@ -28,103 +30,142 @@ import java.util.Date;
 @Service
 public class AuthService {
 
-    private final CaptchaRepository captchaRepository;
-    private final UserRepository userRepository;
     @Value("${captcha.termOf}")
     private String captchaTermOf;
+
+    private final CaptchaRepository captchaRepository;
+    private final UserRepository userRepository;
+    private final PostRepository postRepository;
     private final AuthenticationManager authenticationManager;
+    private final ValidationService validationService;
+    private final ResourceStorage resourceStorage;
+    private final EmailService emailService;
+    private final PasswordEncoder passwordEncoder;
+
 
     @Autowired
-    public AuthService(CaptchaRepository captchaRepository, UserRepository userRepository, AuthenticationManager authenticationManager) {
+    public AuthService(CaptchaRepository captchaRepository, UserRepository userRepository, PostRepository postRepository, AuthenticationManager authenticationManager, ValidationService validationService, ResourceStorage resourceStorage, EmailService emailService, PasswordEncoder passwordEncoder) {
         this.captchaRepository = captchaRepository;
         this.userRepository = userRepository;
+        this.postRepository = postRepository;
         this.authenticationManager = authenticationManager;
+        this.validationService = validationService;
+        this.resourceStorage = resourceStorage;
+        this.emailService = emailService;
+        this.passwordEncoder = passwordEncoder;
     }
 
 
-    @Transactional
     public CaptchaResponse getCaptchaResponse() {
         Cage cage = new GCage();
         String code = cage.getTokenGenerator().next();
         String secret = RandomStringUtils.randomAlphabetic(20);
         String image = Base64.getEncoder().encodeToString(cage.draw(code));
 
-        captchaRepository.deleteByTimeBefore(new Date(new Date().getTime() - (long) Integer.parseInt(captchaTermOf) * 60 * 1000));
         captchaRepository.save(new CaptchaCode(new Date(), code, secret));
         return new CaptchaResponse(secret, "data:image/png;base64, " + image);
     }
 
-    public RegisterResponse getRegisterResponse(RegisterRequest request) {
-        RegisterResponse response = new RegisterResponse();
+    @Transactional
+    public ResultResponseWithErrors getRegisterResponse(RegisterRequest request) {
+        captchaRepository.deleteByTimeBefore(new Date(new Date().getTime() - (long) Integer.parseInt(captchaTermOf) * 1000 * 60));
+        ResultResponseWithErrors response = new ResultResponseWithErrors();
 
-        validateCaptcha(request, response);
-        validateEMail(request, response);
-        validatePassword(request, response);
-        validateName(request, response);
+        validationService.validateCaptcha(request.getCaptchaSecret(), request.getCaptcha(), response);
+        validationService.validateEMail(request.getEMail(), response);
+        validationService.validatePassword(request.getPassword(), response);
+        validationService.validateName(request.getName(), response);
 
-        if (response.isResult()) {
-            userRepository.save(new User(0, new Date(), request.getName(), request.getEMail(), request.getPassword()));
+        if (response.getErrors().isEmpty()) {
+            userRepository.save(new User(
+                    0,
+                    new Date(),
+                    request.getName(),
+                    request.getEMail(),
+                    passwordEncoder.encode(request.getPassword()))
+            );
         }
         return response;
     }
 
-    public LoginResponse getLoginResponse(LoginRequest loginRequest) {
+    public SimpleResultResponse getLoginResponse(LoginRequest loginRequest) {
         Authentication auth;
         try {
             auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
         } catch (AuthenticationException e) {
-            return new LoginResponse(false, null);
+            return new SimpleResultResponse();
         }
         SecurityContextHolder.getContext().setAuthentication(auth);
         org.springframework.security.core.userdetails.User user = (org.springframework.security.core.userdetails.User) auth.getPrincipal();
         return createLoginResponse(user.getUsername());
     }
 
-    public LogoutResponse getLogoutResponse() {
-        return new LogoutResponse();
-    }
-
     public LoginResponse getCheckResponse(Principal principal) {
         return createLoginResponse(principal.getName());
     }
 
-
-    private void validateCaptcha(RegisterRequest request, RegisterResponse response) {
-        if (!captchaRepository.findBySecretCode(request.getCaptchaSecret()).isPresent()) {
-            response.setResult(false);
-            response.getErrors().put("captcha", "Нет такой капчи");
-        } else if (!request.getCaptcha().equals(captchaRepository.findBySecretCode(request.getCaptchaSecret()).get().getCode())) {
-            response.setResult(false);
-            response.getErrors().put("captcha", "Код с картинки введен неверно");
+    public ResultResponseWithErrors getMyProfileResponse(ProfileRequest request, Principal principal) throws IOException {
+        ResultResponseWithErrors response = new ResultResponseWithErrors();
+        User currentUser = userRepository.findByEmail(principal.getName());
+        if (request.getName() != null) {
+            validationService.validateName(request.getName(), response);
+            currentUser.setName(request.getName());
         }
+        if (request.getEmail() != null) {
+            validationService.validateEMail(request.getEmail(), response);
+            currentUser.setEmail(request.getEmail());
+        }
+        if (request.getPassword() != null) {
+            validationService.validatePassword(request.getPassword(), response);
+            currentUser.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+        if (request.getPhoto() != null && request.getRemovePhoto() == 0) {
+            validationService.validateImage(request.getPhoto(), response);
+            currentUser.setPhoto(resourceStorage.saveNewUserImage(request.getPhoto(), currentUser));
+        }
+        if (request.getPhoto() == null && request.getRemovePhoto() == 1) {
+            currentUser.setPhoto("");
+        }
+
+        if (response.getErrors().isEmpty()) {
+            userRepository.save(currentUser);
+        }
+
+        return response;
     }
 
-    private void validateEMail(RegisterRequest request, RegisterResponse response) {
-        if (userRepository.findByEmail(request.getEMail()) != null) {
-            response.setResult(false);
-            response.getErrors().put("email", "Этот e-mail уже зарегистрирован");
-        } else if (!request.getEMail().matches(".+@.+\\..+")) {
-            response.setResult(false);
-            response.getErrors().put("email", "Введен некорректный e-mail");
+
+    public SimpleResultResponse getRestoreResponse(RestoreRequest request) {
+        User user = userRepository.findByEmail(request.getEmail());
+        if (user == null) {
+            return new SimpleResultResponse();
         }
+
+        String code = RandomStringUtils.randomAlphanumeric(45);
+        emailService.sendEmail(user.getEmail(), code);
+
+        user.setCode(code);
+        userRepository.save(user);
+
+        return new SimpleResultResponse(true);
     }
 
-    private void validatePassword(RegisterRequest request, RegisterResponse response) {
-        if (request.getPassword().length() < 6) {
-            response.setResult(false);
-            response.getErrors().put("password", "Пароль короче 6-ти символов");
+    @Transactional
+    public ResultResponseWithErrors getPostPasswordResponse(PasswordRequest request) {
+        captchaRepository.deleteByTimeBefore(new Date(new Date().getTime() - (long) Integer.parseInt(captchaTermOf) * 1000 * 60));
+        ResultResponseWithErrors response = new ResultResponseWithErrors();
+        validationService.validateCaptcha(request.getCaptchaSecret(), request.getCaptcha(), response);
+        validationService.validatePassword(request.getPassword(), response);
+        User user = userRepository.findByCodeEquals(request.getCode());
+        validationService.validateUserForPasswordChange(user, response);
+
+        if (response.getErrors().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+            userRepository.save(user);
         }
+        return response;
     }
 
-    private void validateName(RegisterRequest request, RegisterResponse response) {
-        if (!request.getName().matches("[A-Z][a-z]+ [A-Z][a-z]+")) {
-            response.setResult(false);
-            response.getErrors().put("name", "Имя указано неверно. Должны быть имя и фамилия через пробел латинскими буквами");
-        } else if (!request.getName().matches(".{6,40}")) {
-            response.setResult(false);
-            response.getErrors().put("name", "Имя указано неверно. Должно быть от 6 до 40 символов");
-        }
-    }
 
     private LoginResponse createLoginResponse(String email) {
         main.model.User currentUser = userRepository.findByEmail(email);
@@ -137,9 +178,8 @@ public class AuthService {
                 currentUser.getPhoto(),
                 currentUser.getEmail(),
                 currentUser.getIsModerator() == 1,
-                currentUser.getIsModerator() == 1 ? currentUser.getModeratedPostsWithStatusNEW().size() : 0,
+                currentUser.getIsModerator() == 1 ? postRepository.qtyOfPostsNeededModeration() : 0,
                 currentUser.getIsModerator() == 1);
-        return new LoginResponse(true, userLoginResponse);
+        return new LoginResponse(userLoginResponse);
     }
-
 }

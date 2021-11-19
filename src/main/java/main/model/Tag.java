@@ -11,13 +11,19 @@ public class Tag {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-
     @Column(nullable = false)
     private String name;
-
     @ManyToMany(mappedBy = "tags")
     private List<Post> posts;
 
+
+    public Tag() {
+    }
+
+    public Tag(String name, List<Post> posts) {
+        this.name = name;
+        this.posts = posts;
+    }
 
 
     public int getId() {
@@ -39,5 +45,4 @@ public class Tag {
     public void setPosts(List<Post> posts) {
         this.posts = posts;
     }
-
 }

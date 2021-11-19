@@ -1,14 +1,15 @@
 package main.api.response;
 
 public class CaptchaResponse {
+
     private String secret;
     private String image;
+
 
     public CaptchaResponse(String secret, String image) {
         this.secret = secret;
         this.image = image;
     }
-
 
 
     public String getSecret() {

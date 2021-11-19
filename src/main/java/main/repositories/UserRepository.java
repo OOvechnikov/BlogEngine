@@ -8,5 +8,6 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Integer> {
 
     User findByEmail(String eMail);
+    User findByCodeEquals(String code);
 
 }

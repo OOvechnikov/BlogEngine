@@ -6,6 +6,7 @@ import main.api.response.post.User;
 import java.util.List;
 
 public class PostByIdResponse {
+
     private int id;
     private int timestamp;
     private boolean active;
@@ -17,6 +18,7 @@ public class PostByIdResponse {
     private int viewCount;
     private List<Comment> comments;
     private List<String> tags;
+
 
     public PostByIdResponse(int id, int timestamp, boolean active, User user, String title, String text, int likeCount, int dislikeCount, int viewCount, List<Comment> comments, List<String> tags) {
         this.id = id;
@@ -31,7 +33,6 @@ public class PostByIdResponse {
         this.comments = comments;
         this.tags = tags;
     }
-
 
 
     public int getId() {

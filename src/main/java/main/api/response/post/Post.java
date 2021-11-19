@@ -13,7 +13,6 @@ public class Post {
     private int viewCount;
 
 
-
     public Post(int id, int timestamp, User user, String title, String announce, int likeCount, int dislikeCount, int commentCount, int viewCount) {
         this.id = id;
         this.timestamp = timestamp;
@@ -25,6 +24,7 @@ public class Post {
         this.commentCount = commentCount;
         this.viewCount = viewCount;
     }
+
 
     public int getId() {
         return id;
@@ -97,5 +97,4 @@ public class Post {
     public void setViewCount(int viewCount) {
         this.viewCount = viewCount;
     }
-
 }

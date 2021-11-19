@@ -19,6 +19,7 @@ public class InitResponse {
     @Value("${engine.copyrightFrom}")
     private String copyrightFrom;
 
+
     public String getTitle() {
         return title;
     }
@@ -66,5 +67,4 @@ public class InitResponse {
     public void setCopyrightFrom(String copyrightFrom) {
         this.copyrightFrom = copyrightFrom;
     }
-
 }

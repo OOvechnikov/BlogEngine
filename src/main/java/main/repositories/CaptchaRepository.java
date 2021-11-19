@@ -9,6 +9,6 @@ import java.util.Optional;
 public interface CaptchaRepository extends JpaRepository<CaptchaCode, Integer> {
 
     long deleteByTimeBefore(Date time);
-    Optional<CaptchaCode> findBySecretCode(String secret);
+    CaptchaCode findBySecretCode(String secret);
 
 }

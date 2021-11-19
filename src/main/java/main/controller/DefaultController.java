@@ -18,5 +18,4 @@ public class DefaultController {
     public String redirectToIndex() {
         return "forward:/";
     }
-
 }

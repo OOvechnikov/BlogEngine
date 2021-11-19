@@ -9,16 +9,12 @@ public class GlobalSetting {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-
     @Column(nullable = false)
     private String code;
-
     @Column(nullable = false)
     private String name;
-
     @Column(nullable = false)
     private String value;
-
 
 
     public int getId() {
@@ -48,5 +44,4 @@ public class GlobalSetting {
     public void setValue(String value) {
         this.value = value;
     }
-
 }

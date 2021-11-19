@@ -12,46 +12,49 @@ public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-
     @Column(name = "is_active", nullable = false)
     private int isActive;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "moderation_status", columnDefinition = "ENUM('NEW', 'ACCEPTED', 'DECLINED')", nullable = false)
     private ModerationStatus moderationStatus;
-
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "moderator_id")
     private User moderator;
-
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id")
     private User user;
-
     @Column(nullable = false)
     private Date time;
-
     @Column(nullable = false)
     private String title;
-
     @Column(length = 65 * 1024, nullable = false)
     private String text;
-
     @Column(nullable = false)
     private int viewCount;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "post")
     private List<PostVote> votes;
-
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "post")
     private List<PostComment> comments;
-
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "tag2post",
             joinColumns = @JoinColumn(name = "post_id"),
             inverseJoinColumns = @JoinColumn(name = "tag_id"))
     private List<Tag> tags;
 
+
+    public Post() {
+    }
+
+    public Post(int isActive, ModerationStatus moderationStatus, User user, Date time, String title, String text, List<Tag> tags) {
+        this.isActive = isActive;
+        this.moderationStatus = moderationStatus;
+        this.user = user;
+        this.time = time;
+        this.title = title;
+        this.text = text;
+        this.tags = tags;
+    }
 
 
     public int getId() {
@@ -145,5 +148,4 @@ public class Post {
     public void setTags(List<Tag> tags) {
         this.tags = tags;
     }
-
 }

@@ -17,8 +17,9 @@ public class CaptchaCode {
     @Column(nullable = false)
     private String code;
 
-    @Column(nullable = false)
+    @Column(name = "secret_code", nullable = false)
     private String secretCode;
+
 
     public CaptchaCode() {
     }
@@ -28,7 +29,6 @@ public class CaptchaCode {
         this.code = code;
         this.secretCode = secretCode;
     }
-
 
 
     public int getId() {
@@ -58,5 +58,4 @@ public class CaptchaCode {
     public void setSecretCode(String secretCode) {
         this.secretCode = secretCode;
     }
-
 }

@@ -11,6 +11,7 @@ public class Tag {
         this.weight = weight;
     }
 
+
     public String getName() {
         return name;
     }
@@ -26,5 +27,4 @@ public class Tag {
     public void setWeight(double weight) {
         this.weight = weight;
     }
-
 }

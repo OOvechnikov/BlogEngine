@@ -2,25 +2,20 @@ package main.api.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class LoginResponse {
+public class LoginResponse extends SimpleResultResponse{
 
-    private boolean result;
     @JsonProperty("user")
     private UserLoginResponse userLoginResponse;
 
-    public LoginResponse(boolean result, UserLoginResponse userLoginResponse) {
-        this.result = result;
+
+    public LoginResponse() {
+    }
+
+    public LoginResponse(UserLoginResponse userLoginResponse) {
+        this.setResult(true);
         this.userLoginResponse = userLoginResponse;
     }
 
-
-    public boolean isResult() {
-        return result;
-    }
-
-    public void setResult(boolean result) {
-        this.result = result;
-    }
 
     public UserLoginResponse getUserLoginResponse() {
         return userLoginResponse;

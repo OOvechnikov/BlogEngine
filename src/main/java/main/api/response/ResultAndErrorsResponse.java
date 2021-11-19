@@ -3,14 +3,33 @@ package main.api.response;
 import java.util.HashMap;
 import java.util.Map;
 
-public class RegisterResponse {
+public class ResultAndErrorsResponse {
+
+    private int id = 0;
     private boolean result = true;
+    private String message;
     private Map<String, String> errors = new HashMap<>();
 
-    public RegisterResponse() {
+
+    public ResultAndErrorsResponse() {
     }
 
 
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public boolean isResult() {
         return result;

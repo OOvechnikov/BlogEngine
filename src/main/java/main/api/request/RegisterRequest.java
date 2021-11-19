@@ -3,8 +3,9 @@ package main.api.request;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class RegisterRequest {
+
     @JsonProperty("e_mail")
-    private String eMail;
+    private String email;
     private String password;
     private String name;
     private String captcha;
@@ -13,11 +14,11 @@ public class RegisterRequest {
 
 
     public String getEMail() {
-        return eMail;
+        return email;
     }
 
     public void setEMail(String eMail) {
-        this.eMail = eMail;
+        this.email = eMail;
     }
 
     public String getPassword() {

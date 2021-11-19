@@ -10,6 +10,7 @@ public class UserLoginResponse {
     private int moderationCount;
     private boolean settings;
 
+
     public UserLoginResponse(int id, String name, String photo, String email, boolean moderation, int moderationCount, boolean settings) {
         this.id = id;
         this.name = name;
@@ -19,7 +20,6 @@ public class UserLoginResponse {
         this.moderationCount = moderationCount;
         this.settings = settings;
     }
-
 
 
     public int getId() {

@@ -6,12 +6,12 @@ public class User {
     private String name;
     private String photo;
 
+
     public User(int id, String name, String photo) {
         this.id = id;
         this.name = name;
         this.photo = photo;
     }
-
 
 
     public int getId() {
@@ -29,5 +29,4 @@ public class User {
     public void setName(String name) {
         this.name = name;
     }
-
 }
