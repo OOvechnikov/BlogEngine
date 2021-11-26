@@ -128,8 +128,8 @@ public class PostService {
         }
 
         if ((post.getIsActive() == 1 && post.getModerationStatus().equals(ModerationStatus.ACCEPTED) && post.getTime().before(new Date())) ||
-                (currentUser!= null && currentUser.equals(post.getUser())) ||
-                (currentUser!= null && currentUser.getIsModerator() == 1 &&
+                (currentUser != null && currentUser.equals(post.getUser())) ||
+                (currentUser != null && currentUser.getIsModerator() == 1 &&
                         (currentUser.getModeratedPosts().contains(post) || post.getModerationStatus().equals(ModerationStatus.NEW)))) {
 
             //likes/dislikes
@@ -145,9 +145,16 @@ public class PostService {
                                     c.getUser().getId(),
                                     c.getUser().getName(),
                                     c.getUser().getPhoto())))
+                    .sorted(Comparator.comparingInt(Comment::getTimestamp).reversed())
                     .collect(Collectors.toList());
             //tags
             List<String> tags = post.getTags().stream().map(Tag::getName).collect(Collectors.toList());
+
+            //viewCount increase
+            if (currentUser == null || (!currentUser.equals(post.getUser()) && currentUser.getIsModerator() == 0)) {
+                post.setViewCount(post.getViewCount() + 1);
+                postRepository.save(post);
+            }
 
             return new PostByIdResponse(
                     post.getId(),
@@ -228,7 +235,10 @@ public class PostService {
             if (!response.getErrors().isEmpty()) {
                 return response;
             }
-            post.setModerationStatus(userRepository.findByEmail(principal.getName()).getIsModerator() == 0 ? ModerationStatus.NEW : post.getModerationStatus());
+            if (userRepository.findByEmail(principal.getName()).getIsModerator() == 0) {
+                post.setModerationStatus(ModerationStatus.NEW);
+                post.setModerator(null);
+            }
             postRepository.save(post);
         } else {
             response.setResult(false);

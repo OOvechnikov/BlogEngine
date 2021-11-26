@@ -1,12 +1,17 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 spring:
+
+  servlet:
+    multipart:
+      max-file-size: 5MB
+
   messages:
     basename: lang.messages
 
   datasource:
-    url: jdbc:mysql://localhost:3306/blog_engine?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Europe/Moscow
+    url: jdbc:${JAWSDB_URL:mysql://localhost:3306/blog_engine?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Europe/Moscow}
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
     password: rootroot
@@ -23,8 +28,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: username
-    password: password
+    username: ${MAIL_USERNAME:username}
+    password: ${MAIL_PASSWORD:password}
     properties:
       mail:
         smtp:
@@ -43,8 +48,3 @@ engine:
 
 captcha:
   termOf: 60
-
-path:
-  upload:
-   pictures: E:/Java/SkillBox/resources/upload
-   users: E:/Java/SkillBox/resources/users

@@ -1,13 +1,10 @@
 package main.api.request;
 
-import org.springframework.web.multipart.MultipartFile;
-
 public class ProfileRequest {
 
     private String name;
     private String email;
     private String password;
-    private MultipartFile photo;
     private int removePhoto;
 
 
@@ -33,14 +30,6 @@ public class ProfileRequest {
 
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public MultipartFile getPhoto() {
-        return photo;
-    }
-
-    public void setPhoto(MultipartFile photo) {
-        this.photo = photo;
     }
 
     public int getRemovePhoto() {

@@ -12,10 +12,10 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     List<Post> findAllByIsActiveAndModerationStatusAndTimeLessThan(int isActive, ModerationStatus moderationStatus, Date time);
     List<Post> findAllByIsActiveAndModerationStatusAndTimeLessThanOrderByTimeAsc(int isActive, ModerationStatus moderationStatus, Date time);
     List<Post> findAllByIsActiveAndModerationStatusAndTimeLessThanOrderByTimeDesc(int isActive, ModerationStatus moderationStatus, Date time);
-    @Query(value = "from Post where isActive = ?1 and moderationStatus = ?2 and time <= ?3 order by comments.size desc")
+    @Query(value = "from Post where isActive = ?1 and moderationStatus = ?2 and time <= ?3 order by comments.size desc, time desc")
     List<Post> findAllByIsActiveAndModerationStatusAndTimeLessThanOrderByCommentsCount(int isActive, ModerationStatus moderationStatus, Date time);
     @Query(value = "SELECT *, (SELECT count(*) FROM post_votes pv JOIN posts p ON p.id = pv.post_id WHERE posts.id = pv.post_id AND value = 1) AS likes_count FROM posts " +
-            "WHERE is_active = 1 AND moderation_status = 'ACCEPTED' AND time <= curdate() " +
+            "WHERE is_active = 1 AND moderation_status = 'ACCEPTED' AND time <= now() " +
             "ORDER BY likes_count DESC",
             nativeQuery = true)
     List<Post> findAllByIsActiveAndModerationStatusAndTimeLessThanOrderByLikesCount();

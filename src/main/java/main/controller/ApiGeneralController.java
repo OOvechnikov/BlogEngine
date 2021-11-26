@@ -1,5 +1,6 @@
 package main.controller;
 
+import main.api.request.ProfileRequestWithPhoto;
 import main.api.request.ProfileRequest;
 import main.api.response.*;
 import main.api.response.tag.TagResponse;
@@ -58,9 +59,19 @@ public class ApiGeneralController {
         return tagService.getTagResponseJDBC(query);
     }
 
-    @PostMapping("/profile/my")
-    public SimpleResultResponse postMyyProfile(@ModelAttribute ProfileRequest request,
-                                           Principal principal) throws IOException {
+    @PostMapping(value = "/profile/my", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    public SimpleResultResponse postMyProfile(@ModelAttribute ProfileRequestWithPhoto request,
+                                               Principal principal) throws IOException {
+        ResultResponseWithErrors response = authService.getMyProfileResponse(request, principal);
+        if (response.getErrors().isEmpty()) {
+            return new SimpleResultResponse(true);
+        }
+        return response;
+    }
+
+    @PostMapping(value = "/profile/my")
+    public SimpleResultResponse postMyProfile(@RequestBody ProfileRequest request,
+                                               Principal principal) throws IOException {
         ResultResponseWithErrors response = authService.getMyProfileResponse(request, principal);
         if (response.getErrors().isEmpty()) {
             return new SimpleResultResponse(true);

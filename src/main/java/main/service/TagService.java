@@ -30,7 +30,7 @@ public class TagService {
         String customQuery = "SELECT t.name AS tag_name, count(t.id) AS tag_freq, " +
                 "(select count(*) from posts p where p.moderation_status = 'ACCEPTED' AND p.is_active = 1 AND p.time <= curdate()) AS posts_qty " +
                 "FROM tags t JOIN tag2post t2p ON t.id = t2p.tag_id JOIN posts p ON t2p.post_id = p.id " +
-                "WHERE p.moderation_status = 'ACCEPTED' AND p.is_active = 1 AND p.time <= curdate() AND t.name LIKE '" + query + "%'" +
+                "WHERE p.moderation_status = 'ACCEPTED' AND p.is_active = 1 AND p.time <= now() AND t.name LIKE '" + query + "%'" +
                 "GROUP BY t.id " +
                 "ORDER BY tag_freq DESC";
 

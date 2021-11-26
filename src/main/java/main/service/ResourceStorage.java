@@ -1,50 +1,45 @@
 package main.service;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.Transformation;
+import com.cloudinary.utils.ObjectUtils;
 import main.model.User;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Map;
 
 @Service
 public class ResourceStorage {
 
-    @Value("${path.upload.pictures}")
-    private String postImageUploadPath;
-    @Value("${path.upload.users}")
-    private String userImageUploadPath;
+    private final Cloudinary cloudinary;
+
+
+    @Autowired
+    public ResourceStorage(Cloudinary cloudinary) {
+        this.cloudinary = cloudinary;
+    }
 
 
     public String saveNewPostImage(MultipartFile image) throws IOException {
-        if (!new File(postImageUploadPath).exists()) {
-            Files.createDirectories(Paths.get(postImageUploadPath));
-        }
-        String finalPath = postImageUploadPath + "/" + RandomStringUtils.randomAlphabetic(2)
+        String finalPath = RandomStringUtils.randomAlphabetic(2)
                 + "/" + RandomStringUtils.randomAlphabetic(2)
-                + "/" + RandomStringUtils.randomAlphabetic(2);
-        if (!new File(finalPath).exists()) {
-            Files.createDirectories(Paths.get(finalPath));
-        }
-        Path path = Paths.get(finalPath, image.getOriginalFilename());
-
-        image.transferTo(path);
-        return path.toString();
+                + "/" + RandomStringUtils.randomAlphabetic(2)
+                + "/" + image.getOriginalFilename();
+        Map params = ObjectUtils.asMap("public_id", "Blog/pictures/" + finalPath);
+        Map uploadResult = cloudinary.uploader().upload(image.getBytes(), params);
+        return uploadResult.get("url").toString();
     }
 
     public String saveNewUserImage(MultipartFile image, User user) throws IOException {
-        if (!new File(userImageUploadPath).exists()) {
-            Files.createDirectories(Paths.get(userImageUploadPath));
-        }
-        Path path = Paths.get(userImageUploadPath, user.getEmail() + '.' + FilenameUtils.getExtension(image.getOriginalFilename()));
-
-        image.transferTo(path);
-        return path.toString();
+        Map params = ObjectUtils.asMap(
+                "public_id", "Blog/users/" + user.getEmail(),
+                "transformation", new Transformation<>().width(36).height(36)
+        );
+        Map uploadResult = cloudinary.uploader().upload(image.getBytes(), params);
+        return uploadResult.get("url").toString();
     }
 }

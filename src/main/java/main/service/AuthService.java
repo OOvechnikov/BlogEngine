@@ -107,33 +107,34 @@ public class AuthService {
     public ResultResponseWithErrors getMyProfileResponse(ProfileRequest request, Principal principal) throws IOException {
         ResultResponseWithErrors response = new ResultResponseWithErrors();
         User currentUser = userRepository.findByEmail(principal.getName());
-        if (request.getName() != null) {
+        if (request.getName() != null && !request.getName().equals(currentUser.getName())) {
             validationService.validateName(request.getName(), response);
             currentUser.setName(request.getName());
         }
-        if (request.getEmail() != null) {
+        if (request.getEmail() != null && !request.getEmail().equals(currentUser.getEmail())) {
             validationService.validateEMail(request.getEmail(), response);
             currentUser.setEmail(request.getEmail());
         }
         if (request.getPassword() != null) {
             validationService.validatePassword(request.getPassword(), response);
-            currentUser.setPassword(passwordEncoder.encode(request.getPassword()));
+            if (passwordEncoder.matches(request.getPassword(), currentUser.getPassword())) {
+                response.getErrors().put("password", "Введен существующий пароль");
+            } else {
+                currentUser.setPassword(passwordEncoder.encode(request.getPassword()));
+            }
         }
-        if (request.getPhoto() != null && request.getRemovePhoto() == 0) {
-            validationService.validateImage(request.getPhoto(), response);
-            currentUser.setPhoto(resourceStorage.saveNewUserImage(request.getPhoto(), currentUser));
-        }
-        if (request.getPhoto() == null && request.getRemovePhoto() == 1) {
+        if (request instanceof ProfileRequestWithPhoto) {
+            validationService.validateImage(((ProfileRequestWithPhoto) request).getPhoto(), response);
+            currentUser.setPhoto(resourceStorage.saveNewUserImage(((ProfileRequestWithPhoto) request).getPhoto(), currentUser));
+        } else if (request instanceof  ProfileRequestWithoutPhoto && request.getRemovePhoto() == 1) {
             currentUser.setPhoto("");
         }
-
         if (response.getErrors().isEmpty()) {
             userRepository.save(currentUser);
         }
 
         return response;
     }
-
 
     public SimpleResultResponse getRestoreResponse(RestoreRequest request) {
         User user = userRepository.findByEmail(request.getEmail());

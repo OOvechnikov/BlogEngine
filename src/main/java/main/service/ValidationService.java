@@ -93,7 +93,9 @@ public class ValidationService {
             response.getErrors().put("image", "Размер превышает 5 Mb");
         } else if (image.isEmpty()) {
             response.getErrors().put("image", "Файл пуст");
-        } else if (originalFilename != null && !FilenameUtils.getExtension(originalFilename).equals("jpg") && !FilenameUtils.getExtension(originalFilename).equals("png")) {
+        } else if (originalFilename != null &&
+                !FilenameUtils.getExtension(originalFilename).equalsIgnoreCase("jpg") &&
+                !FilenameUtils.getExtension(originalFilename).equalsIgnoreCase("png")) {
             response.getErrors().put("image", "Допустимые типы: jpg, png");
         }
     }
